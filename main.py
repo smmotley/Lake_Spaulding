@@ -18,7 +18,9 @@ from plotly.subplots import make_subplots
 import requests
 import pandas as pd
 import numpy as np
+import os
 from datetime import datetime, timedelta
+from PIL import Image
 
 
 def create_plots():
@@ -30,6 +32,7 @@ def create_plots():
     OUTPUT: Two html files and two static images.
     :return:
     '''
+    cur_dir = os.getcwd()
     wy = datetime.today().year              # Water Year
     month_num = datetime.today().month + 2  # Current month number
 
@@ -223,7 +226,7 @@ def create_plots():
                                     y=df_ave['Average'],
                                     name="50 Year Average",
                                     hovertext=df_ave['Average'],
-                                    hovertemplate="Average: %{y:.1f}%<extra></extra>",
+                                    hovertemplate="Average: %{y:.1f}\"<extra></extra>",
                                     fill='tozeroy',
                                     line=dict(width=0.5, color='rgb(111, 231, 219)'),
                                     marker_line_width=2,
@@ -325,20 +328,40 @@ def create_plots():
         lineChart.write_html(file='LSP_Line_WY2021.html',include_plotlyjs='cdn', include_mathjax='cdn',
                         full_html=False)
 
-        barChart.write_image('LSP_Bar.png', width=1200, height=750)
-        lineChart.write_image('LSP_Line.png', width=1200, height=750)
+        barChart_path = os.path.join(cur_dir,'LSP_Bar.png')
+        lineChart_path = os.path.join(cur_dir,'LSP_Line.png')
+
+        barChart.write_image(barChart_path, width=1200, height=750)
+        lineChart.write_image(lineChart_path, width=1200, height=750)
+
+        merge_pngs(barChart_path, lineChart_path)
         return
     except requests.exceptions.RequestException:
         print('HTTP Request failed')
         return None
 
 
+def merge_pngs(img1, img2):
+    images = [Image.open(image) for image in [img1, img2]]
+    widths, heights = zip(*(i.size for i in images))
+
+    total_width = sum(widths)
+    total_height = sum(heights)
+
+    new_im = Image.new('RGB', (int(total_width/2), total_height))
+
+    y_offset = 0
+    for im in images:
+        new_im.paste(im, (0,y_offset))
+        y_offset += im.size[1]
+
+    new_im.save('LSP_Graphs.png')
 def get_last_years_data(wy):
     '''
     On the very first date of the water year, a csv file from the previous water year will not
     exist on the local drive. So go grab the data and download it. (Should only have to do this
     once a year).
-    :param wy: current water year. 
+    :param wy: current water year.
     :return:
     '''
     try:
