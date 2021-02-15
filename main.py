@@ -16,6 +16,7 @@ from plotly import graph_objs as go
 from calendar import monthrange
 from plotly.subplots import make_subplots
 import requests
+import pathlib
 import pandas as pd
 import numpy as np
 import os
@@ -299,6 +300,14 @@ def create_plots():
         today_date_row = df[df['DATE_TIME'] == datetime.today().strftime("%Y-%m-%d 00:00:00")].index[0]
         ave_date_row = next(iter(np.where(df_ave.index == datetime.now().replace(hour=0,minute=0,second=0,microsecond=0))[0]), 'not matched')
 
+        # At 6:00 am, when this automatically runs,  the cumulative precip is not avail (nan). So to get this value,
+        # and plot it, add the value from the day before (day before yesterday) and add the daily value from yesterday.
+        if pd.isnull(df['RAIN INCHES'].iloc[today_date_row-1]):
+            # df['RAIN INCHES'].iloc[today_date_row - 1]= df['RAIN INCHES'].iloc[today_date_row-2] + \
+            #                                             df['PPT INC INCHES'].iloc[today_date_row-1]
+            df.at[(today_date_row - 1), 'RAIN INCHES'] = df['RAIN INCHES'].iloc[today_date_row - 2] + \
+                                                         df['PPT INC INCHES'].iloc[today_date_row - 1]
+
         lineChart.add_annotation(x=datetime.today()-timedelta(days=1), y=df['RAIN INCHES'].iloc[today_date_row-1],
                           text=f"Through {data_pull_date}<br>"
                                f"Total = {df['RAIN INCHES'].max()} <br>"
@@ -323,25 +332,26 @@ def create_plots():
                          ticks="outside", tickwidth=2, tickcolor='black', ticklen=10,
                           range=[0, df_wettest['PRECIP'].max()+5])
 
-        barChart.write_html('LSP_Bar_WY2021.html',include_plotlyjs='cdn', include_mathjax='cdn',
-                        full_html=False)
-        lineChart.write_html(file='LSP_Line_WY2021.html',include_plotlyjs='cdn', include_mathjax='cdn',
-                        full_html=False)
+        wfolder_path = pathlib.Path('G:/','Energy Marketing','Weather','Programs','Lake_Spaulding')
+        barChart.write_html(os.path.join(wfolder_path, 'LSP_Bar_WY2021.html'),include_plotlyjs='cdn',
+                            include_mathjax='cdn', full_html=False)
+        lineChart.write_html(os.path.join(wfolder_path, 'LSP_Line_WY2021.html'),include_plotlyjs='cdn',
+                             include_mathjax='cdn', full_html=False)
 
-        barChart_path = os.path.join(cur_dir,'LSP_Bar.png')
-        lineChart_path = os.path.join(cur_dir,'LSP_Line.png')
+        barChart_path = os.path.join(wfolder_path, "LSP_Bar.png")
+        lineChart_path = os.path.join(wfolder_path, "LSP_Line.png")
 
-        barChart.write_image(barChart_path, width=1200, height=750)
-        lineChart.write_image(lineChart_path, width=1200, height=750)
+        barChart.write_image(os.path.join(wfolder_path, "LSP_Bar.png"), width=1200, height=750)
+        lineChart.write_image(os.path.join(wfolder_path, "LSP_Line.png"), width=1200, height=750)
 
-        merge_pngs(barChart_path, lineChart_path)
+        merge_pngs(barChart_path, lineChart_path, wfolder_path)
         return
     except requests.exceptions.RequestException:
         print('HTTP Request failed')
         return None
 
 
-def merge_pngs(img1, img2):
+def merge_pngs(img1, img2, wfolder_path):
     images = [Image.open(image) for image in [img1, img2]]
     widths, heights = zip(*(i.size for i in images))
 
@@ -355,7 +365,7 @@ def merge_pngs(img1, img2):
         new_im.paste(im, (0,y_offset))
         y_offset += im.size[1]
 
-    new_im.save('LSP_Graphs.png')
+    new_im.save(os.path.join(wfolder_path, 'LSP_Graphs.png'))
 def get_last_years_data(wy):
     '''
     On the very first date of the water year, a csv file from the previous water year will not
