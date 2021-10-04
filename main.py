@@ -34,7 +34,7 @@ def create_plots():
     OUTPUT: Two html files and two static images.
     :return:
     '''
-    cur_dir = os.getcwd()
+    dir_path = os.path.dirname(os.path.realpath(__file__))
     wy = datetime.today().year              # Water Year
     month_num = datetime.today().month + 2  # Current month number
 
@@ -74,8 +74,8 @@ def create_plots():
         # we need to remove the last row
         df = df[:-1]
 
-        df_driest = pd.read_csv('LSP_WY1976.csv')
-        df_wettest = pd.read_csv('LSP_WY2017.csv')
+        df_driest = pd.read_csv(os.path.join(dir_path, 'LSP_WY1976.csv'))
+        df_wettest = pd.read_csv(os.path.join(dir_path, 'LSP_WY2017.csv'))
         try:
             df_lastyear = pd.read_csv(f'LSP_WY{wy-1}.csv')
         except FileNotFoundError:
@@ -347,8 +347,8 @@ def create_plots():
         barChart_path = os.path.join(wfolder_path, "LSP_Bar.png")
         lineChart_path = os.path.join(wfolder_path, "LSP_Line.png")
 
-        barChart.write_image(os.path.join(wfolder_path, "LSP_Bar.png"), width=1200, height=750)
-        lineChart.write_image(os.path.join(wfolder_path, "LSP_Line.png"), width=1200, height=750)
+        barChart.write_image(os.path.join(wfolder_path, "LSP_Bar.png"), width=1200, height=750, engine='kaleido')
+        lineChart.write_image(os.path.join(wfolder_path, "LSP_Line.png"), width=1200, height=750, engine='kaleido')
 
         merge_pngs(barChart_path, lineChart_path, wfolder_path)
         return
