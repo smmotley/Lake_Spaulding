@@ -22,6 +22,7 @@ import numpy as np
 import os
 from datetime import datetime, timedelta
 from PIL import Image
+import platform
 
 
 def create_plots():
@@ -44,7 +45,8 @@ def create_plots():
     idx = pd.date_range(f'10.01.{wy-1}', f'9.30.{wy}')
     if datetime.today().month >= 10:    # The water year will be year + 1 if it's Oct, Nov, or Dec
         wy = wy + 1
-        month_num = month_num - 9
+        month_num = month_num - 12
+        idx = pd.date_range(f'10.01.{wy - 1}', f'9.30.{wy}')
     try:
         # Daily Data Pull
         response = requests.get(
@@ -151,7 +153,7 @@ def create_plots():
                                     x=(df_monthly.index).strftime("%b"),
                                     y=df_monthly['PPT INC INCHES'],
                                     marker_line_width=2,
-                                    name="2021 Water Year",
+                                    name=f"{wy} Water Year",
                                     hovertemplate="Observed: %{y} inches<extra></extra>",
                                     marker_line_color='rgb(0,0,0)',
                                     marker={"color":'rgb(71,165,252)'},
@@ -200,10 +202,11 @@ def create_plots():
                           )
 
         # The box that will have the "AS-OF" information.
+        text_box_x = 650 - (50*month_num)
         barChart.add_annotation(x=month_num, y=df_monthly['PPT INC INCHES'].iloc[month_num],
                            text=f"Total Through {data_pull_date}",
                            showarrow=True,
-                           ax=300,              # Move box 300 px to the right of the x-val
+                           ax=text_box_x,       # Move box 300 px to the right of the x-val
                            ay=-300,             # Move box 300 px down from the very top.
                            arrowcolor="black",
                            arrowsize=1,
@@ -243,7 +246,7 @@ def create_plots():
                                     x=(df["DATE_TIME"]),
                                     y=df['RAIN INCHES'],
                                     marker_line_width=2,
-                                    name="2021 Water Year",
+                                    name=f"{wy} Water Year",
                                     hovertemplate="Observed: %{y}\"<extra></extra>",
                                     line=dict(width=4, color='rgb(71,165,252)',),
                                     texttemplate='%{y:.1f}',
@@ -332,7 +335,10 @@ def create_plots():
                          ticks="outside", tickwidth=2, tickcolor='black', ticklen=10,
                           range=[0, df_wettest['PRECIP'].max()+5])
 
-        wfolder_path = pathlib.Path('G:/','Energy Marketing','Weather','Programs','Lake_Spaulding')
+        wfolder_path = os.path.join(os.path.sep, 'home', 'smotley', 'images', 'weather_email')
+        if platform.system() == "Windows":
+            wfolder_path = pathlib.Path('G:/','Energy Marketing','Weather','Programs','Lake_Spaulding')
+
         barChart.write_html(os.path.join(wfolder_path, 'LSP_Bar_WY2021.html'),include_plotlyjs='cdn',
                             include_mathjax='cdn', full_html=False)
         lineChart.write_html(os.path.join(wfolder_path, 'LSP_Line_WY2021.html'),include_plotlyjs='cdn',
