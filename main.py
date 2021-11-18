@@ -74,8 +74,8 @@ def create_plots():
         # we need to remove the last row
         df = df[:-1]
 
-        df_driest = pd.read_csv(os.path.join(dir_path, 'LSP_WY1976.csv'))
-        df_wettest = pd.read_csv(os.path.join(dir_path, 'LSP_WY2017.csv'))
+        df_driest = pd.read_csv(os.path.join(dir_path,'LSP_WY1976.csv'))
+        df_wettest = pd.read_csv(os.path.join(dir_path,'LSP_WY2017.csv'))
         try:
             df_lastyear = pd.read_csv(f'LSP_WY{wy-1}.csv')
         except FileNotFoundError:
@@ -147,7 +147,6 @@ def create_plots():
 
         # Create new column and insert the historical average data into the column.
         df_monthly["Average"] = historical_average
-
         # Main bar chart
         barChart=(go.Figure(data=[go.Bar(
                                     x=(df_monthly.index).strftime("%b"),
@@ -202,12 +201,15 @@ def create_plots():
                           )
 
         # The box that will have the "AS-OF" information.
-        text_box_x = 650 - (50*month_num)
+        text_box_x = (month_num+1)
+        text_box_y = 13                 # This will ensure it's above the "normal" bars
         barChart.add_annotation(x=month_num, y=df_monthly['PPT INC INCHES'].iloc[month_num],
                            text=f"Total Through {data_pull_date}",
                            showarrow=True,
-                           ax=text_box_x,       # Move box 300 px to the right of the x-val
-                           ay=-300,             # Move box 300 px down from the very top.
+                           ax=text_box_x,         # Move box over 1 space from the month number
+                           ay=text_box_y,         # Put box above all the normal bars
+                           axref="x",             # Make sure the reference to the annotation is the x axis (not pixels)
+                           ayref="y",             # Make sure the reference to the annotation is the y axis (not pixels)
                            arrowcolor="black",
                            arrowsize=1,
                            arrowwidth=3,
@@ -372,6 +374,8 @@ def merge_pngs(img1, img2, wfolder_path):
         y_offset += im.size[1]
 
     new_im.save(os.path.join(wfolder_path, 'LSP_Graphs.png'))
+
+
 def get_last_years_data(wy):
     '''
     On the very first date of the water year, a csv file from the previous water year will not
